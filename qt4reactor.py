@@ -49,6 +49,14 @@ except ImportError:
     from PySide.QtCore import (QSocketNotifier, QObject, SIGNAL,
                                QTimer, QCoreApplication, QEventLoop)
 
+"""
+Use kqreactor for MacOS (ht: Tomas Touceda / LEAP)
+"""
+
+ReactorSuperclass = posixbase.PosixReactorBase
+if platform.isMacOSX():
+    from twisted.internet import kqreactor
+    ReactorSuperclass = kqreactor.KQueueReactor
 
 class TwistedSocketNotifier(QObject):
     """
@@ -123,7 +131,7 @@ class TwistedSocketNotifier(QObject):
         log.callWithLogger(w, _write)
 
 
-class QtReactor(posixbase.PosixReactorBase):
+class QtReactor(ReactorSuperclass):
     implements(IReactorFDSet)
 
     def __init__(self):
@@ -142,7 +150,7 @@ class QtReactor(posixbase.PosixReactorBase):
             self.qApp = QCoreApplication.instance()
             self._ownApp = False
         self._blockApp = None
-        posixbase.PosixReactorBase.__init__(self)
+        ReactorSuperclass.__init__(self)
 
     def _add(self, xer, primary, type):
         """
